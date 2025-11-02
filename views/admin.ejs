@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin Dashboard</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <h1>🧭 Admin Dashboard</h1>
+  <% if (packages.length === 0) { %>
+    <p>No packages yet.</p>
+  <% } else { %>
+    <table>
+      <tr>
+        <th>ID</th>
+        <th>Sender</th>
+        <th>Recipient</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+      <% packages.forEach(p => { %>
+        <tr>
+          <td><%= p.id %></td>
+          <td><%= p.senderName %></td>
+          <td><%= p.recipientName %></td>
+          <td><%= p.status %></td>
+          <td>
+            <form action="/admin/update/<%= p.id %>" method="POST" style="display:inline;">
+              <input name="status" placeholder="Update status" required>
+              <button>Update</button>
+            </form>
+            <form action="/admin/delete/<%= p.id %>" method="POST" style="display:inline;">
+              <button>🗑️ Delete</button>
+            </form>
+          </td>
+        </tr>
+      <% }) %>
+    </table>
+  <% } %>
+</body>
+</html>
