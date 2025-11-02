@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Track Package</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <h1>📍 Package Tracking</h1>
+  <% if (pkg) { %>
+    <p><strong>ID:</strong> <%= pkg.id %></p>
+    <p><strong>Sender:</strong> <%= pkg.senderName %></p>
+    <p><strong>Recipient:</strong> <%= pkg.recipientName %></p>
+    <p><strong>Address:</strong> <%= pkg.address %></p>
+    <p><strong>Status:</strong> <%= pkg.status %></p>
+    <% if (pkg.photo) { %>
+      <p><img src="<%= pkg.photo %>" width="200"></p>
+    <% } %>
+  <% } else { %>
+    <p>Package not found.</p>
+  <% } %>
+</body>
+</html>
