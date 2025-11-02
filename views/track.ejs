@@ -1,20 +1,20 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Track Package</title>
+  <title>Package Tracking</title>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-  <% if (pkg) { %>
-    <h1>📦 Tracking Package: <%= pkg.id %></h1>
-    <p><strong>Recipient:</strong> <%= pkg.recipientName %></p>
-    <p><strong>Address:</strong> <%= pkg.address %></p>
-    <p><strong>Status:</strong> <%= pkg.status %></p>
-    <% if (pkg.photo) { %>
-      <img src="<%= pkg.photo %>" width="200">
-    <% } %>
-  <% } else { %>
-    <p>Package not found.</p>
-  <% } %>
+<h1>Package Tracking</h1>
+
+<p>ID: <%= pkg.id %></p>
+<p>Recipient: <%= pkg.recipient %></p>
+<p>Address: <%= pkg.address %></p>
+<p>Status: <%= pkg.status %></p>
+
+<% if (pkg.photo) { %>
+  <h3>Delivery Proof</h3>
+  <img src="<%= pkg.photo %>" width="200">
+<% } %>
 </body>
 </html>
