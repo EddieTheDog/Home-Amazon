@@ -1,107 +1,61 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>Front Desk - Home Amazon</title>
+  <title>Front Desk - Create Package</title>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-  <h1>Front Desk - Create Package</h1>
+  <h1>📦 Front Desk - Create Package</h1>
 
-  <form id="packageForm">
-    <label>Package ID:</label>
-    <input type="text" id="packageId" required><br>
-
+  <form action="/frontdesk/create" method="POST">
     <label>Recipient Name:</label>
-    <input type="text" id="recipient" required><br>
+    <input type="text" name="recipientName" required>
 
     <label>Delivery Address:</label>
-    <input type="text" id="address" required><br>
+    <input type="text" name="address" required>
 
     <label>City:</label>
-    <input type="text" id="city" required><br>
+    <input type="text" name="city" required>
 
     <label>State:</label>
-    <input type="text" id="state" required><br>
+    <input type="text" name="state" required>
 
     <label>ZIP/Postal Code:</label>
-    <input type="text" id="zip" required><br>
+    <input type="text" name="zip" required>
 
     <label>Country:</label>
-    <input type="text" id="country" required><br>
+    <input type="text" name="country" required>
 
     <label>Phone Number:</label>
-    <input type="text" id="phone" required><br>
+    <input type="tel" name="phone" required>
 
     <label>Email:</label>
-    <input type="email" id="email"><br>
+    <input type="email" name="email" required>
 
     <label>Package Weight (lbs):</label>
-    <input type="number" id="weight" step="0.01" required><br>
+    <input type="number" step="0.01" name="weight" required>
 
     <label>Package Dimensions (L x W x H in inches):</label>
-    <input type="text" id="dimensions" placeholder="10x5x3" required><br>
+    <input type="text" name="dimensions" placeholder="10x5x3" required>
 
     <label>Delivery Speed:</label>
-    <select id="deliverySpeed">
+    <select name="speed">
       <option value="standard">Standard</option>
       <option value="priority">Priority</option>
-      <option value="express">Express</option>
-    </select><br>
+    </select>
 
     <label>Special Instructions / Notes:</label>
-    <textarea id="notes"></textarea><br>
+    <textarea name="notes"></textarea>
 
     <button type="submit">Create Package & Generate QR Code</button>
   </form>
 
-  <div id="qrCodeContainer" style="margin-top: 20px;"></div>
-
-  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
-  <script>
-    const form = document.getElementById('packageForm');
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      const packageData = {
-        packageId: document.getElementById('packageId').value,
-        recipient: document.getElementById('recipient').value,
-        address: document.getElementById('address').value,
-        city: document.getElementById('city').value,
-        state: document.getElementById('state').value,
-        zip: document.getElementById('zip').value,
-        country: document.getElementById('country').value,
-        phone: document.getElementById('phone').value,
-        email: document.getElementById('email').value,
-        weight: document.getElementById('weight').value,
-        dimensions: document.getElementById('dimensions').value,
-        deliverySpeed: document.getElementById('deliverySpeed').value,
-        notes: document.getElementById('notes').value
-      };
-
-      // Send package info to server
-      const res = await fetch('/api/packages', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify(packageData)
-      });
-
-      if (res.ok) {
-        // Generate QR code for tracking
-        const qrContainer = document.getElementById('qrCodeContainer');
-        qrContainer.innerHTML = '';
-        QRCode.toCanvas(qrContainer, `${window.location.origin}/track?packageId=${packageData.packageId}`, function (error) {
-          if (error) console.error(error);
-        });
-
-        // Redirect to tracking page
-        setTimeout(() => {
-          window.location.href = `/track?packageId=${packageData.packageId}`;
-        }, 1000);
-      } else {
-        alert('Error creating package');
-      }
-    });
-  </script>
+  <% if (package) { %>
+    <h2>✅ Package Created!</h2>
+    <p><strong>Package ID:</strong> <%= package.id %></p>
+    <p><strong>Recipient:</strong> <%= package.recipientName %></p>
+    <p><strong>QR Code:</strong></p>
+    <img src="<%= package.qrCode %>" alt="QR Code">
+  <% } %>
 </body>
 </html>
