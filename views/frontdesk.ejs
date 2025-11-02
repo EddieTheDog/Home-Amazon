@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>Front Desk</title><link rel="stylesheet" href="/style.css"></head>
+<body>
+  <a href="/">← Home</a>
+  <h1>Front Desk — Create Package</h1>
+
+  <% if (query && query.created) { %>
+    <div class="notice">Package created: <strong><%= query.created %></strong></div>
+  <% } %>
+
+  <form action="/api/packages" method="POST">
+    <label>Description <input name="description"></label>
+    <label>Sender name <input name="senderName"></label>
+    <label>Sender contact <input name="senderContact"></label>
+    <label>Recipient name* <input name="recipientName" required></label>
+    <label>Recipient contact <input name="recipientContact"></label>
+    <label>Recipient address* <input name="recipientAddress" required></label>
+    <label>Notes <textarea name="notes"></textarea></label>
+    <button type="submit">Create & Print Label</button>
+  </form>
+
+  <p class="muted">After creating, your package will be assigned a tracking code.</p>
+</body>
+</html>
