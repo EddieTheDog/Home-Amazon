@@ -1,72 +1,105 @@
-const express = require("express");
-const path = require("path");
+const express = require('express');
+const bodyParser = require('body-parser');
+const path = require('path');
+const { v4: uuidv4 } = require('uuid');
+
 const app = express();
-const PORT = process.env.PORT || 3000;
 
 // Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, "public")));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, 'public')));
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
 
-// Set view engine
-app.set("view engine", "ejs");
-app.set("views", path.join(__dirname, "views"));
-
-// In-memory storage for packages
+// In-memory package storage
 let packages = [];
 
-// Routes
-app.get("/", (req, res) => {
-  // Redirect homepage to Amazon as requested
-  res.redirect("https://www.amazon.com");
+// Redirect homepage to Amazon
+app.get('/', (req, res) => {
+  res.redirect('https://amazon.com');
 });
 
-// Front Desk page
-app.get("/frontdesk", (req, res) => {
-  res.render("frontdesk");
+// Front Desk Page
+app.get('/frontdesk', (req, res) => {
+  res.render('frontdesk');
 });
 
-// Admin page
-app.get("/admin", (req, res) => {
-  res.render("admin", { packages });
+// Admin Page
+app.get('/admin', (req, res) => {
+  res.render('admin', { packages });
 });
 
-// Driver page
-app.get("/driver", (req, res) => {
-  res.render("driver", { packages });
+// Driver Page
+app.get('/driver', (req, res) => {
+  res.render('driver', { packages });
 });
 
-// Tracking page
-app.get("/track", (req, res) => {
-  res.render("track", { packages });
+// Tracking Page
+app.get('/track', (req, res) => {
+  const { packageId } = req.query;
+  const pkg = packages.find(p => p.packageId === packageId);
+
+  if (!pkg) return res.status(404).send('Package not found');
+  res.render('track', { package: pkg });
 });
 
-// Staff URLs page
-app.get("/urls", (req, res) => {
-  res.render("urls");
-});
+// Create Package (Front Desk)
+app.post('/api/packages', (req, res) => {
+  const data = req.body;
 
-// API to create a package
-app.post("/api/packages", (req, res) => {
-  const { packageId, recipient, address, notes } = req.body;
-  if (!packageId || !recipient || !address) {
-    return res.status(400).json({ error: "Missing required fields" });
+  if (!data.recipient || !data.address) {
+    return res.status(400).json({ error: 'Recipient and address are required' });
   }
 
   const newPackage = {
-    packageId,
-    recipient,
-    address,
-    notes,
-    status: "At Front Desk",
-    timestamp: new Date(),
+    packageId: uuidv4(),
+    recipient: data.recipient,
+    address: data.address,
+    city: data.city || '',
+    state: data.state || '',
+    zip: data.zip || '',
+    country: data.country || '',
+    phone: data.phone || '',
+    email: data.email || '',
+    weight: data.weight || '',
+    dimensions: data.dimensions || '',
+    deliverySpeed: data.deliverySpeed || 'standard',
+    notes: data.notes || '',
+    status: 'created',
+    claimedBy: null,
+    deliveredAt: null
   };
 
   packages.push(newPackage);
-  res.json({ success: true, package: newPackage });
+
+  res.json({ message: 'Package created', packageId: newPackage.packageId });
 });
 
-// Start server
+// Update Package Status (Driver / Admin)
+app.post('/api/packages/:id/status', (req, res) => {
+  const { id } = req.params;
+  const { status, claimedBy } = req.body;
+
+  const pkg = packages.find(p => p.packageId === id);
+  if (!pkg) return res.status(404).json({ error: 'Package not found' });
+
+  if (status) pkg.status = status;
+  if (claimedBy) pkg.claimedBy = claimedBy;
+  if (status === 'delivered') pkg.deliveredAt = new Date();
+
+  res.json({ message: 'Package updated', package: pkg });
+});
+
+// Delete Package
+app.delete('/api/packages/:id', (req, res) => {
+  const { id } = req.params;
+  packages = packages.filter(p => p.packageId !== id);
+  res.json({ message: 'Package deleted' });
+});
+
+// Start Server
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
