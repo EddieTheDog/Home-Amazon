@@ -1,25 +1,84 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Front Desk - Package Intake</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Front Desk - Home Amazon</title>
   <link rel="stylesheet" href="/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
 </head>
 <body>
-  <h1>📦 Front Desk - Create Package</h1>
-  <form action="/frontdesk" method="POST">
-    <input type="text" name="senderName" placeholder="Sender Name" required>
-    <input type="text" name="recipientName" placeholder="Recipient Name" required>
-    <input type="text" name="address" placeholder="Delivery Address" required>
-    <textarea name="notes" placeholder="Special Instructions"></textarea>
-    <button type="submit">Generate Package</button>
-  </form>
+  <div class="container">
+    <h1>Front Desk Package Entry</h1>
 
-  <% if (pkg) { %>
-    <h2>✅ Package Created</h2>
-    <p><strong>ID:</strong> <%= pkg.id %></p>
-    <p><strong>Status:</strong> <%= pkg.status %></p>
-    <img src="<%= qr %>" alt="QR Code">
-    <p><a href="/track/<%= pkg.id %>">View Tracking Page</a></p>
-  <% } %>
+    <form id="packageForm">
+      <label for="recipient">Recipient Name:</label>
+      <input type="text" id="recipient" name="recipient" required>
+
+      <label for="address">Address:</label>
+      <input type="text" id="address" name="address" required>
+
+      <label for="notes">Special Notes:</label>
+      <input type="text" id="notes" name="notes">
+
+      <button type="submit">Generate Package QR</button>
+      <button type="button" id="nextPackage">Next Package</button>
+    </form>
+
+    <div id="qrcodeContainer" style="margin-top:20px;">
+      <canvas id="qrcode"></canvas>
+      <p id="packageId"></p>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById("packageForm");
+    const nextBtn = document.getElementById("nextPackage");
+    const qrCanvas = document.getElementById("qrcode");
+    const packageIdText = document.getElementById("packageId");
+    let packageCounter = 0;
+
+    function generatePackageId() {
+      // Simple unique ID for package
+      return 'PKG-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+    }
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const recipient = document.getElementById("recipient").value;
+      const address = document.getElementById("address").value;
+      const notes = document.getElementById("notes").value;
+
+      if (!recipient || !address) return alert("Please fill in required fields.");
+
+      const packageId = generatePackageId();
+      packageIdText.innerText = "Package ID: " + packageId;
+
+      // Generate QR Code
+      const qr = new QRious({
+        element: qrCanvas,
+        value: packageId,
+        size: 200
+      });
+
+      // Send package data to server
+      fetch("/api/packages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ packageId, recipient, address, notes })
+      })
+      .then(res => res.json())
+      .then(data => {
+        console.log("Package saved:", data);
+      })
+      .catch(err => console.error(err));
+    });
+
+    nextBtn.addEventListener("click", () => {
+      form.reset();
+      qrCanvas.getContext('2d').clearRect(0, 0, qrCanvas.width, qrCanvas.height);
+      packageIdText.innerText = "";
+    });
+  </script>
 </body>
 </html>
