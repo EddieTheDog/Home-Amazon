@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>System URLs</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <h1>🔗 System Links</h1>
+  <ul>
+    <% links.forEach(l => { %>
+      <li><a href="<%= l.url %>"><%= l.name %></a></li>
+    <% }) %>
+  </ul>
+</body>
+</html>
