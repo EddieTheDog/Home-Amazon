@@ -1,121 +1,72 @@
-import express from "express";
-import bodyParser from "body-parser";
-import path from "path";
-import { fileURLToPath } from "url";
-import QRCode from "qrcode";
-import multer from "multer";
-import fs from "fs";
-import { v4 as uuidv4 } from "uuid";
-
+const express = require("express");
+const path = require("path");
 const app = express();
+const PORT = process.env.PORT || 3000;
 
-// === Setup paths ===
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, "public")));
 
-// === Middleware ===
+// Set view engine
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
-app.use(express.static(path.join(__dirname, "public")));
-app.use(bodyParser.urlencoded({ extended: true }));
 
-// === File upload config for driver photos ===
-const upload = multer({ dest: "public/uploads/" });
-
-// === In-memory database ===
+// In-memory storage for packages
 let packages = [];
 
-// === Redirect homepage ===
-app.get("/", (req, res) => res.redirect("https://amazon.com"));
+// Routes
+app.get("/", (req, res) => {
+  // Redirect homepage to Amazon as requested
+  res.redirect("https://www.amazon.com");
+});
 
-// === Front Desk: create a package ===
+// Front Desk page
 app.get("/frontdesk", (req, res) => {
-  res.render("frontdesk", { pkg: null, qr: null });
+  res.render("frontdesk");
 });
 
-app.post("/frontdesk", async (req, res) => {
-  const { senderName, recipientName, address, notes } = req.body;
-  const id = uuidv4();
-
-  const pkg = {
-    id,
-    senderName,
-    recipientName,
-    address,
-    notes,
-    status: "At Drop-off Location",
-    createdAt: new Date().toLocaleString(),
-    photo: null
-  };
-
-  packages.push(pkg);
-
-  const trackingURL = `${req.protocol}://${req.get("host")}/track/${pkg.id}`;
-  const qr = await QRCode.toDataURL(trackingURL);
-
-  res.render("frontdesk", { pkg, qr });
-});
-
-// === Tracking page ===
-app.get("/track/:id", (req, res) => {
-  const pkg = packages.find(p => p.id === req.params.id);
-  if (!pkg) return res.status(404).send("Package not found");
-  res.render("track", { pkg });
-});
-
-// === Admin Panel ===
+// Admin page
 app.get("/admin", (req, res) => {
   res.render("admin", { packages });
 });
 
-app.post("/admin/update/:id", (req, res) => {
-  const pkg = packages.find(p => p.id === req.params.id);
-  if (pkg) {
-    pkg.status = req.body.status || pkg.status;
-    pkg.notes = req.body.notes || pkg.notes;
-  }
-  res.redirect("/admin");
-});
-
-app.post("/admin/delete/:id", (req, res) => {
-  packages = packages.filter(p => p.id !== req.params.id);
-  res.redirect("/admin");
-});
-
-// === Driver Panel ===
+// Driver page
 app.get("/driver", (req, res) => {
-  res.render("driver", { pkg: null });
+  res.render("driver", { packages });
 });
 
-app.post("/driver/lookup", (req, res) => {
-  const { id } = req.body;
-  const pkg = packages.find(p => p.id === id);
-  if (!pkg) return res.render("driver", { pkg: null, error: "Package not found" });
-  res.render("driver", { pkg });
+// Tracking page
+app.get("/track", (req, res) => {
+  res.render("track", { packages });
 });
 
-app.post("/driver/update/:id", upload.single("photo"), (req, res) => {
-  const pkg = packages.find(p => p.id === req.params.id);
-  if (pkg) {
-    pkg.status = req.body.status || pkg.status;
-    if (req.file) pkg.photo = `/uploads/${req.file.filename}`;
-  }
-  res.redirect("/driver");
-});
-
-// === URLs Index ===
+// Staff URLs page
 app.get("/urls", (req, res) => {
-  const base = `${req.protocol}://${req.get("host")}`;
-  res.render("urls", {
-    links: [
-      { name: "Front Desk Panel", url: `${base}/frontdesk` },
-      { name: "Admin Dashboard", url: `${base}/admin` },
-      { name: "Driver Panel", url: `${base}/driver` },
-      { name: "Tracking Example", url: `${base}/track/example-id` }
-    ]
-  });
+  res.render("urls");
 });
 
-// === Start Server ===
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`✅ Shipping service running on port ${PORT}`));
+// API to create a package
+app.post("/api/packages", (req, res) => {
+  const { packageId, recipient, address, notes } = req.body;
+  if (!packageId || !recipient || !address) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  const newPackage = {
+    packageId,
+    recipient,
+    address,
+    notes,
+    status: "At Front Desk",
+    timestamp: new Date(),
+  };
+
+  packages.push(newPackage);
+  res.json({ success: true, package: newPackage });
+});
+
+// Start server
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
