@@ -1,11 +1,10 @@
-import express from 'express';
-import path from 'path';
-import bodyParser from 'body-parser';
-import { fileURLToPath } from 'url';
-import multer from 'multer';
-import QRCode from 'qrcode';
-import { v4 as uuidv4 } from 'uuid';
-import fs from 'fs';
+import express from "express";
+import path from "path";
+import { fileURLToPath } from "url";
+import bodyParser from "body-parser";
+import multer from "multer";
+import fs from "fs";
+import QRCode from "qrcode";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -13,108 +12,114 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, 'public')));
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
-
-// Storage for uploaded photos
+// Setup storage for delivery photos
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, 'public/uploads/'),
-  filename: (req, file, cb) => cb(null, Date.now() + '_' + file.originalname)
+  destination: (req, file, cb) => cb(null, path.join(__dirname, "public/uploads")),
+  filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`),
 });
 const upload = multer({ storage });
 
-// In-memory package storage
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "views"));
+
+app.use(express.static(path.join(__dirname, "public")));
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+
+// In-memory package store
 let packages = [];
 
-// --------------------- ROUTES ---------------------
+// Helper: Generate unique ID
+function generatePackageID() {
+  return "PKG-" + Math.random().toString(36).substr(2, 9).toUpperCase();
+}
 
-// Redirect homepage to Amazon
-app.get('/', (req, res) => {
-  res.redirect('https://www.amazon.com');
+// ======== ROUTES ========
+
+// Front Desk
+app.get("/frontdesk", (req, res) => {
+  res.render("frontdesk", { pkg: null });
 });
 
-// Front Desk Page
-app.get('/frontdesk', (req, res) => {
-  res.render('frontdesk', { package: null });
-});
+app.post("/frontdesk/create", async (req, res) => {
+  try {
+    const id = generatePackageID();
+    const pkg = {
+      id,
+      recipient: req.body.recipient,
+      address: req.body.address,
+      city: req.body.city,
+      state: req.body.state,
+      zip: req.body.zip,
+      country: req.body.country,
+      phone: req.body.phone,
+      email: req.body.email,
+      weight: req.body.weight,
+      dimensions: req.body.dimensions,
+      speed: req.body.speed,
+      notes: req.body.notes,
+      shippingDeck: req.body.deck || "Unassigned",
+      status: "Created",
+      photo: null,
+      createdAt: new Date(),
+    };
+    packages.push(pkg);
 
-// Handle Front Desk package creation
-app.post('/frontdesk/create', async (req, res) => {
-  const id = uuidv4();
-  const pkg = {
-    id,
-    recipientName: req.body.recipientName,
-    address: req.body.address,
-    city: req.body.city,
-    state: req.body.state,
-    zip: req.body.zip,
-    country: req.body.country,
-    phone: req.body.phone,
-    email: req.body.email,
-    weight: req.body.weight,
-    dimensions: req.body.dimensions,
-    speed: req.body.speed,
-    notes: req.body.notes,
-    status: 'Created',
-    photo: null
-  };
+    // Generate QR code linking to tracking page
+    const qrData = `${req.protocol}://${req.get("host")}/track/${id}`;
+    const qrImage = await QRCode.toDataURL(qrData);
+    pkg.qr = qrImage;
 
-  // Generate QR code
-  const qrData = `https://home-amazon.onrender.com/track/${id}`;
-  pkg.qrCode = await QRCode.toDataURL(qrData);
-
-  packages.push(pkg);
-
-  res.render('frontdesk', { package: pkg });
-});
-
-// Driver page
-app.get('/driver', (req, res) => {
-  res.render('driver', { pkg: null });
-});
-
-// Driver lookup
-app.post('/driver/lookup', (req, res) => {
-  const pkg = packages.find(p => p.id === req.body.id);
-  res.render('driver', { pkg: pkg || null });
-});
-
-// Driver update
-app.post('/driver/update/:id', upload.single('photo'), (req, res) => {
-  const pkg = packages.find(p => p.id === req.params.id);
-  if (!pkg) return res.send('Package not found');
-
-  pkg.status = req.body.status || pkg.status;
-  if (req.file) {
-    pkg.photo = '/uploads/' + req.file.filename;
+    res.render("frontdesk", { pkg });
+  } catch (err) {
+    res.status(500).send("Error creating package");
   }
-
-  res.render('driver', { pkg });
 });
 
-// Admin panel
-app.get('/admin', (req, res) => {
-  res.render('admin', { packages });
+// Driver panel
+app.get("/driver", (req, res) => {
+  res.render("driver", { pkg: null });
+});
+
+app.post("/driver/lookup", (req, res) => {
+  const pkg = packages.find((p) => p.id === req.body.id);
+  res.render("driver", { pkg });
+});
+
+app.post("/driver/claim/:id", (req, res) => {
+  const pkg = packages.find((p) => p.id === req.params.id);
+  if (pkg) {
+    pkg.status = "On Truck";
+  }
+  res.redirect("/driver");
+});
+
+app.post("/driver/deliver/:id", upload.single("photo"), (req, res) => {
+  const pkg = packages.find((p) => p.id === req.params.id);
+  if (pkg) {
+    pkg.status = "Delivered";
+    if (req.file) {
+      pkg.photo = "/uploads/" + req.file.filename;
+    }
+  }
+  res.redirect("/driver");
 });
 
 // Tracking page
-app.get('/track/:id', (req, res) => {
-  const pkg = packages.find(p => p.id === req.params.id);
-  res.render('track', { pkg });
+app.get("/track/:id", (req, res) => {
+  const pkg = packages.find((p) => p.id === req.params.id);
+  if (!pkg) return res.status(404).send("Package not found");
+  res.render("track", { pkg });
 });
 
-// URLs page
-app.get('/URLs', (req, res) => {
-  const links = [
-    { name: 'Front Desk', url: '/frontdesk' },
-    { name: 'Driver', url: '/driver' },
-    { name: 'Admin', url: '/admin' }
-  ];
-  res.render('urls', { links });
+// Admin panel
+app.get("/admin", (req, res) => {
+  res.render("admin", { packages });
 });
 
-// Start server
+// Redirect root to external page
+app.get("/", (req, res) => {
+  res.redirect("https://amazon.com");
+});
+
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
