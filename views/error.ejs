@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Error Page</title>
+<style>
+body { font-family: Arial; padding: 20px; }
+pre { background: #f4f4f4; padding: 10px; border-radius: 5px; }
+button { margin-top: 10px; padding: 10px 15px; cursor: pointer; }
+</style>
+</head>
+<body>
+<h1>Oops! Something went wrong.</h1>
+<p>Here’s what we know:</p>
+<pre id="errorInfo"><%= JSON.stringify(errorInfo, null, 2) %></pre>
+<button onclick="copyError()">Copy Info</button>
+<script>
+function copyError() {
+  const info = document.getElementById('errorInfo').textContent;
+  navigator.clipboard.writeText(info).then(() => {
+    alert('Error info copied!');
+  });
+}
+</script>
+</body>
+</html>
