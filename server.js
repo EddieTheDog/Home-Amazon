@@ -1,7 +1,12 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const path = require('path');
-const { v4: uuidv4 } = require('uuid');
+import express from 'express';
+import bodyParser from 'body-parser';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { v4 as uuidv4 } from 'uuid';
+
+// Fix __dirname in ES module
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
@@ -15,43 +20,25 @@ app.set('views', path.join(__dirname, 'views'));
 // In-memory package storage
 let packages = [];
 
-// Redirect homepage to Amazon
-app.get('/', (req, res) => {
-  res.redirect('https://amazon.com');
-});
+// Routes
+app.get('/', (req, res) => res.redirect('https://amazon.com'));
 
-// Front Desk Page
-app.get('/frontdesk', (req, res) => {
-  res.render('frontdesk');
-});
-
-// Admin Page
-app.get('/admin', (req, res) => {
-  res.render('admin', { packages });
-});
-
-// Driver Page
-app.get('/driver', (req, res) => {
-  res.render('driver', { packages });
-});
-
-// Tracking Page
+app.get('/frontdesk', (req, res) => res.render('frontdesk'));
+app.get('/admin', (req, res) => res.render('admin', { packages }));
+app.get('/driver', (req, res) => res.render('driver', { packages }));
 app.get('/track', (req, res) => {
   const { packageId } = req.query;
   const pkg = packages.find(p => p.packageId === packageId);
-
   if (!pkg) return res.status(404).send('Package not found');
   res.render('track', { package: pkg });
 });
 
-// Create Package (Front Desk)
+// API
 app.post('/api/packages', (req, res) => {
   const data = req.body;
-
   if (!data.recipient || !data.address) {
     return res.status(400).json({ error: 'Recipient and address are required' });
   }
-
   const newPackage = {
     packageId: uuidv4(),
     recipient: data.recipient,
@@ -70,36 +57,27 @@ app.post('/api/packages', (req, res) => {
     claimedBy: null,
     deliveredAt: null
   };
-
   packages.push(newPackage);
-
   res.json({ message: 'Package created', packageId: newPackage.packageId });
 });
 
-// Update Package Status (Driver / Admin)
 app.post('/api/packages/:id/status', (req, res) => {
   const { id } = req.params;
   const { status, claimedBy } = req.body;
-
   const pkg = packages.find(p => p.packageId === id);
   if (!pkg) return res.status(404).json({ error: 'Package not found' });
-
   if (status) pkg.status = status;
   if (claimedBy) pkg.claimedBy = claimedBy;
   if (status === 'delivered') pkg.deliveredAt = new Date();
-
   res.json({ message: 'Package updated', package: pkg });
 });
 
-// Delete Package
 app.delete('/api/packages/:id', (req, res) => {
   const { id } = req.params;
   packages = packages.filter(p => p.packageId !== id);
   res.json({ message: 'Package deleted' });
 });
 
-// Start Server
+// Start server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
