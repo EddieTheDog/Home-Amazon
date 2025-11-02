@@ -5,27 +5,29 @@
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-  <h1>🛠 Admin Panel</h1>
+<h1>Admin Panel</h1>
 
-  <table border="1">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Recipient</th>
-        <th>Address</th>
-        <th>Status</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% packages.forEach(p => { %>
-        <tr>
-          <td><%= p.id %></td>
-          <td><%= p.recipientName %></td>
-          <td><%= p.address %></td>
-          <td><%= p.status %></td>
-        </tr>
-      <% }) %>
-    </tbody>
-  </table>
+<table border="1">
+  <tr>
+    <th>ID</th>
+    <th>Recipient</th>
+    <th>Status</th>
+    <th>Deck</th>
+    <th>Photo</th>
+  </tr>
+  <% packages.forEach(pkg => { %>
+    <tr>
+      <td><%= pkg.id %></td>
+      <td><%= pkg.recipient %></td>
+      <td><%= pkg.status %></td>
+      <td><%= pkg.shippingDeck %></td>
+      <td>
+        <% if (pkg.photo) { %>
+          <img src="<%= pkg.photo %>" width="100">
+        <% } %>
+      </td>
+    </tr>
+  <% }) %>
+</table>
 </body>
 </html>
