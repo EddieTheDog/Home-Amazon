@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>Track Package</title><link rel="stylesheet" href="/style.css"></head>
+<body>
+  <a href="/">← Home</a>
+  <h1>Track Package</h1>
+  <form id="trackForm">
+    <input id="code" placeholder="Enter tracking code" />
+    <button type="submit">Track</button>
+  </form>
+  <div id="result"></div>
+
+  <script>
+    document.getElementById('trackForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const code = document.getElementById('code').value.trim();
+      if (!code) return alert('Enter code');
+      const res = await fetch('/api/packages/' + code);
+      const data = await res.json();
+      const out = document.getElementById('result');
+      if (data.error) out.innerText = 'Not found';
+      else out.innerHTML = '<pre>' + JSON.stringify(data.package, null, 2) + '</pre>';
+    });
+  </script>
+</body>
+</html>
