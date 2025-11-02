@@ -5,57 +5,34 @@
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-  <h1>📦 Front Desk - Create Package</h1>
+<h1>Front Desk - Create Package</h1>
 
-  <form action="/frontdesk/create" method="POST">
-    <label>Recipient Name:</label>
-    <input type="text" name="recipientName" required>
+<form action="/frontdesk/create" method="POST">
+  <input name="recipient" placeholder="Recipient Name" required>
+  <input name="address" placeholder="Delivery Address" required>
+  <input name="city" placeholder="City" required>
+  <input name="state" placeholder="State" required>
+  <input name="zip" placeholder="ZIP" required>
+  <input name="country" placeholder="Country" required>
+  <input name="phone" placeholder="Phone" required>
+  <input name="email" placeholder="Email" required>
+  <input name="weight" placeholder="Package Weight" required>
+  <input name="dimensions" placeholder="Dimensions (LxWxH)" required>
+  <select name="speed">
+    <option value="Standard">Standard</option>
+    <option value="Priority">Priority</option>
+  </select>
+  <input name="deck" placeholder="Assign Shipping Deck (optional)">
+  <textarea name="notes" placeholder="Special Notes"></textarea>
+  <button type="submit">Create Package & Generate QR Code</button>
+</form>
 
-    <label>Delivery Address:</label>
-    <input type="text" name="address" required>
-
-    <label>City:</label>
-    <input type="text" name="city" required>
-
-    <label>State:</label>
-    <input type="text" name="state" required>
-
-    <label>ZIP/Postal Code:</label>
-    <input type="text" name="zip" required>
-
-    <label>Country:</label>
-    <input type="text" name="country" required>
-
-    <label>Phone Number:</label>
-    <input type="tel" name="phone" required>
-
-    <label>Email:</label>
-    <input type="email" name="email" required>
-
-    <label>Package Weight (lbs):</label>
-    <input type="number" step="0.01" name="weight" required>
-
-    <label>Package Dimensions (L x W x H in inches):</label>
-    <input type="text" name="dimensions" placeholder="10x5x3" required>
-
-    <label>Delivery Speed:</label>
-    <select name="speed">
-      <option value="standard">Standard</option>
-      <option value="priority">Priority</option>
-    </select>
-
-    <label>Special Instructions / Notes:</label>
-    <textarea name="notes"></textarea>
-
-    <button type="submit">Create Package & Generate QR Code</button>
-  </form>
-
-  <% if (package) { %>
-    <h2>✅ Package Created!</h2>
-    <p><strong>Package ID:</strong> <%= package.id %></p>
-    <p><strong>Recipient:</strong> <%= package.recipientName %></p>
-    <p><strong>QR Code:</strong></p>
-    <img src="<%= package.qrCode %>" alt="QR Code">
-  <% } %>
+<% if (pkg) { %>
+  <h2>Package Created!</h2>
+  <p>ID: <%= pkg.id %></p>
+  <p>Recipient: <%= pkg.recipient %></p>
+  <p>Status: <%= pkg.status %></p>
+  <img src="<%= pkg.qr %>" width="200">
+<% } %>
 </body>
 </html>
