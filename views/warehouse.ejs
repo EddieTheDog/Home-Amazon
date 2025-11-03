@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Warehouse Dashboard</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+<h1>Warehouse Dashboard</h1>
+
+<table border="1" id="packagesTable">
+  <tr>
+    <th>ID</th><th>Recipient</th><th>Status</th><th>Warehouse</th><th>Actions</th>
+  </tr>
+  <% packages.forEach(pkg => { %>
+    <tr id="<%= pkg.id %>">
+      <td><%= pkg.id %></td>
+      <td><%= pkg.recipient %></td>
+      <td><%= pkg.status %></td>
+      <td><%= pkg.warehouse %></td>
+      <td>
+        <select onchange="updateStatus('<%= pkg.id %>', this.value)">
+          <option>Created</option>
+          <option>Received</option>
+          <option>On Truck</option>
+          <option>In Transit</option>
+          <option>Delivered</option>
+        </select>
+      </td>
+    </tr>
+  <% }) %>
+</table>
+
+<script>
+  const socket = io();
+  socket.on("update", pkg => {
+    const row = document.getElementById(pkg.id);
+    if (row) {
+      row.cells[2].innerText = pkg.status;
+    }
+  });
+
+  function updateStatus(id, status) {
+    socket.emit("updateStatus", { id, status });
+  }
+</script>
+</body>
+</html>
