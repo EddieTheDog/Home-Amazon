@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Warehouse Scanner</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
+</head>
+<body>
+<h1>Warehouse Scanner</h1>
+<video id="video" width="300" height="200"></video>
+<p id="status">Waiting for scan...</p>
+
+<script>
+const socket = io();
+const codeReader = new ZXing.BrowserBarcodeReader();
+
+const videoElement = document.getElementById('video');
+
+codeReader.decodeFromVideoDevice(null, 'video', (result, err) => {
+  if (result) {
+    const id = result.text.split('/track/').pop();
+    document.getElementById('status').innerText = `Scanned: ${id}`;
+    videoElement.style.border = "5px solid green";
+    socket.emit("scan", id);
+    setTimeout(() => {
+      videoElement.style.border = "";
+      document.getElementById('status').innerText = "Waiting for scan...";
+    }, 1000);
+  }
+});
+</script>
+</body>
+</html>
