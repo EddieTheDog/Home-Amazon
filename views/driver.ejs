@@ -2,36 +2,46 @@
 <html>
 <head>
   <title>Driver Panel</title>
-  <link rel="stylesheet" href="/style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    h1 { color: #333; }
+    .package { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; }
+    img { max-width: 200px; display: block; margin-top: 10px; }
+  </style>
 </head>
 <body>
   <h1>🚚 Driver Panel</h1>
 
   <form action="/driver/lookup" method="POST">
     <input type="text" name="id" placeholder="Enter Package ID" required>
-    <button>Lookup</button>
+    <button type="submit">Lookup</button>
   </form>
 
   <% if (pkg) { %>
-    <h2>Package Found</h2>
-    <p>ID: <%= pkg.id %></p>
-    <p>Address: <%= pkg.address %></p>
-    <p>Status: <%= pkg.status %></p>
+    <div class="package">
+      <h2>Package Info</h2>
+      <p><strong>ID:</strong> <%= pkg.id %></p>
+      <p><strong>Recipient:</strong> <%= pkg.recipient %></p>
+      <p><strong>Address:</strong> <%= pkg.address %></p>
+      <p><strong>Notes:</strong> <%= pkg.notes %></p>
+      <p><strong>Status:</strong> <%= pkg.status %></p>
 
-    <form action="/driver/update/<%= pkg.id %>" method="POST" enctype="multipart/form-data">
-      <select name="status" required>
-        <option>Received</option>
-        <option>On Truck</option>
-        <option>Out for Delivery</option>
-        <option>Delivered</option>
-      </select>
-      <input type="file" name="photo" accept="image/*">
-      <button>Update</button>
-    </form>
+      <form action="/driver/update/<%= pkg.id %>" method="POST" enctype="multipart/form-data">
+        <select name="status" required>
+          <option value="Processing" <%= pkg.status === 'Processing' ? 'selected' : '' %>>Processing</option>
+          <option value="On Truck" <%= pkg.status === 'On Truck' ? 'selected' : '' %>>On Truck</option>
+          <option value="At House" <%= pkg.status === 'At House' ? 'selected' : '' %>>At House</option>
+          <option value="Delivered" <%= pkg.status === 'Delivered' ? 'selected' : '' %>>Delivered</option>
+        </select>
+        <input type="file" name="photo" accept="image/*">
+        <button type="submit">Update</button>
+      </form>
 
-    <% if (pkg.photo) { %>
-      <img src="<%= pkg.photo %>" width="200">
-    <% } %>
+      <% if (pkg.photo) { %>
+        <img src="<%= pkg.photo %>" alt="Package Photo">
+      <% } %>
+    </div>
   <% } %>
 </body>
 </html>
