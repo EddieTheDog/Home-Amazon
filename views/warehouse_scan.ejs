@@ -1,42 +1,33 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Warehouse Scanner</title>
+  <title>Warehouse Scan</title>
+  <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-  <h1>📱 Warehouse Scanner</h1>
+  <h1>📦 Warehouse Scan</h1>
+  <video id="scanner" width="300" height="200"></video>
+  <div id="status">Waiting for scan...</div>
 
-  <form id="scanForm">
-    <input type="text" name="packageId" placeholder="Scan or enter Package ID" required>
-    <button type="submit">Send Scan</button>
-  </form>
-
-  <p id="status"></p>
-
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
   <script>
-    const form = document.getElementById('scanForm');
+    const socket = io();
     const statusEl = document.getElementById('status');
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const data = new FormData(form);
-      const packageId = data.get('packageId');
+    Quagga.init({
+      inputStream : { name : "Live", type : "LiveStream", target: document.querySelector('#scanner') },
+      decoder : { readers : ["code_128_reader"] }
+    }, function(err) {
+        if (err) { console.log(err); return; }
+        Quagga.start();
+    });
 
-      try {
-        const res = await fetch('/warehouse/scan', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-          body: new URLSearchParams({ packageId })
-        });
-        if(res.ok){
-          statusEl.innerText = '✅ Scan sent!';
-          form.reset();
-        } else {
-          statusEl.innerText = '❌ Package not found';
-        }
-      } catch(err){
-        statusEl.innerText = '❌ Error sending scan';
-      }
+    Quagga.onDetected(function(result) {
+      const code = result.codeResult.code;
+      statusEl.innerText = 'Scanned: ' + code;
+      fetch(`/warehouse/update/${code}`, { method: 'POST', body: new URLSearchParams({status: 'Processing'}) })
+        .then(() => statusEl.innerText = 'Updated!');
     });
   </script>
 </body>
