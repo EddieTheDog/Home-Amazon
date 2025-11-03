@@ -1,26 +1,33 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Warehouse Panel</title>
+  <title>Warehouse</title>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-  <h1>🏭 Warehouse</h1>
-  <ul>
+  <h1>🏭 Warehouse Packages</h1>
+  <table border="1">
+    <tr>
+      <th>ID</th><th>Recipient</th><th>Status</th><th>Action</th>
+    </tr>
     <% packages.forEach(pkg => { %>
-      <li>
-        ID: <%= pkg.id %> | Status: <%= pkg.status %> | Recipient: <%= pkg.recipient %>
-        <form action="/warehouse/update/<%= pkg.id %>" method="POST">
-          <select name="status">
-            <option value="Received">Received</option>
-            <option value="Processing">Processing</option>
-            <option value="On Truck">On Truck</option>
-            <option value="Out for Delivery">Out for Delivery</option>
-          </select>
-          <button type="submit">Update</button>
-        </form>
-      </li>
+      <tr>
+        <td><%= pkg.id %></td>
+        <td><%= pkg.recipient %></td>
+        <td><%= pkg.status %></td>
+        <td>
+          <form action="/warehouse/update" method="POST">
+            <input type="hidden" name="id" value="<%= pkg.id %>">
+            <select name="status">
+              <option>Received</option>
+              <option>On Truck</option>
+              <option>Out for Delivery</option>
+            </select>
+            <button>Update</button>
+          </form>
+        </td>
+      </tr>
     <% }) %>
-  </ul>
+  </table>
 </body>
 </html>
