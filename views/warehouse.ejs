@@ -1,33 +1,64 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Warehouse</title>
-  <link rel="stylesheet" href="/style.css">
+  <title>Warehouse Panel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    h1 { color: #333; }
+    #scanner { width: 100%; max-width: 400px; height: auto; border: 1px solid #ccc; margin-bottom: 20px; }
+    .package { border-bottom: 1px solid #eee; padding: 10px 0; }
+    .package span { font-weight: bold; }
+    .success { background-color: #c8f7c5; }
+  </style>
 </head>
 <body>
-  <h1>🏭 Warehouse Packages</h1>
-  <table border="1">
-    <tr>
-      <th>ID</th><th>Recipient</th><th>Status</th><th>Action</th>
-    </tr>
+  <h1>Warehouse Panel</h1>
+
+  <video id="scanner"></video>
+  <p id="status">Waiting for scan...</p>
+
+  <div id="packages">
     <% packages.forEach(pkg => { %>
-      <tr>
-        <td><%= pkg.id %></td>
-        <td><%= pkg.recipient %></td>
-        <td><%= pkg.status %></td>
-        <td>
-          <form action="/warehouse/update" method="POST">
-            <input type="hidden" name="id" value="<%= pkg.id %>">
-            <select name="status">
-              <option>Received</option>
-              <option>On Truck</option>
-              <option>Out for Delivery</option>
-            </select>
-            <button>Update</button>
-          </form>
-        </td>
-      </tr>
+      <div class="package" id="pkg-<%= pkg.id %>">
+        <span>ID:</span> <%= pkg.id %> | 
+        <span>Recipient:</span> <%= pkg.recipient %> | 
+        <span>Status:</span> <%= pkg.status %>
+      </div>
     <% }) %>
-  </table>
+  </div>
+
+  <script type="module">
+    import QrScanner from 'https://cdn.jsdelivr.net/npm/qr-scanner@1.4.2/qr-scanner.min.js';
+
+    const videoElem = document.getElementById('scanner');
+    const statusElem = document.getElementById('status');
+
+    const scanner = new QrScanner(videoElem, result => {
+      statusElem.textContent = `Scanned: ${result}`;
+      statusElem.classList.add('success');
+
+      fetch(`/warehouse/scan/${result}`, { method: 'POST' })
+        .then(res => res.json())
+        .then(data => {
+          if(data.success) {
+            const pkgElem = document.getElementById(`pkg-${result}`);
+            if(pkgElem) {
+              pkgElem.innerHTML = `<span>ID:</span> ${data.pkg.id} | <span>Recipient:</span> ${data.pkg.recipient} | <span>Status:</span> ${data.pkg.status}`;
+            } else {
+              const newPkg = document.createElement('div');
+              newPkg.id = `pkg-${data.pkg.id}`;
+              newPkg.className = 'package';
+              newPkg.innerHTML = `<span>ID:</span> ${data.pkg.id} | <span>Recipient:</span> ${data.pkg.recipient} | <span>Status:</span> ${data.pkg.status}`;
+              document.getElementById('packages').appendChild(newPkg);
+            }
+          }
+          setTimeout(() => statusElem.textContent = 'Waiting for scan...', 1500);
+          statusElem.classList.remove('success');
+        });
+    });
+
+    scanner.start();
+  </script>
 </body>
 </html>
