@@ -5,29 +5,28 @@
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-  <h1>Driver Panel</h1>
+  <h1>🚚 Driver Panel</h1>
 
   <form action="/driver/lookup" method="POST">
     <input type="text" name="id" placeholder="Enter Package ID" required>
-    <button type="submit">Lookup</button>
+    <button>Lookup</button>
   </form>
 
   <% if (pkg) { %>
     <h2>Package Found</h2>
-    <p><strong>ID:</strong> <%= pkg.id %></p>
-    <p><strong>Recipient:</strong> <%= pkg.name %></p>
-    <p><strong>Address:</strong> <%= pkg.address %>, <%= pkg.city %>, <%= pkg.state %> <%= pkg.zip %></p>
-    <p><strong>Notes:</strong> <%= pkg.notes %></p>
-    <p><strong>Status:</strong> <%= pkg.status %></p>
+    <p>ID: <%= pkg.id %></p>
+    <p>Address: <%= pkg.address %></p>
+    <p>Status: <%= pkg.status %></p>
 
     <form action="/driver/update/<%= pkg.id %>" method="POST" enctype="multipart/form-data">
-      <select name="status">
-        <option value="On Truck">On Truck</option>
-        <option value="At House">At House</option>
-        <option value="Delivered">Delivered</option>
+      <select name="status" required>
+        <option>Received</option>
+        <option>On Truck</option>
+        <option>Out for Delivery</option>
+        <option>Delivered</option>
       </select>
       <input type="file" name="photo" accept="image/*">
-      <button type="submit">Update</button>
+      <button>Update</button>
     </form>
 
     <% if (pkg.photo) { %>
