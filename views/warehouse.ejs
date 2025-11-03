@@ -6,45 +6,27 @@
   <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
-  <h1>🏭 Warehouse Panel</h1>
-
-  <p>Status: <span id="status">Waiting for scans...</span></p>
-
-  <button id="enableScanner">Enable Scanner</button>
-
-  <div id="scanResult"></div>
-
-  <h2>Recent Packages</h2>
-  <ul id="packageList">
-    <!-- dynamically populated -->
+  <h1>Warehouse Panel</h1>
+  <ul id="package-list">
+    <% packages.forEach(pkg => { %>
+      <li id="<%= pkg.id %>">
+        <strong><%= pkg.id %></strong> - <%= pkg.name %> - <%= pkg.status %>
+      </li>
+    <% }) %>
   </ul>
 
   <script>
     const socket = io();
-
-    const enableScannerBtn = document.getElementById('enableScanner');
-    const scanResult = document.getElementById('scanResult');
-    const packageList = document.getElementById('packageList');
-    const statusEl = document.getElementById('status');
-
-    enableScannerBtn.addEventListener('click', () => {
-      statusEl.textContent = 'Scanner enabled. Waiting for barcode...';
-      socket.emit('enableScanner'); // you can handle this event server-side
-    });
-
-    // Listen for scanned packages from the server
     socket.on('packageScanned', pkg => {
-      statusEl.textContent = `Last scanned: ${pkg.id}`;
-      const li = document.createElement('li');
-      li.textContent = `ID: ${pkg.id} | Address: ${pkg.address} | Status: ${pkg.status}`;
-      packageList.prepend(li);
-
-      // Flash green to indicate success
-      scanResult.textContent = `✅ Package ${pkg.id} scanned successfully`;
-      scanResult.style.color = 'green';
-      setTimeout(() => {
-        scanResult.textContent = '';
-      }, 2000);
+      const el = document.getElementById(pkg.id);
+      if (el) {
+        el.innerText = `${pkg.id} - ${pkg.name} - ${pkg.status}`;
+      } else {
+        const li = document.createElement('li');
+        li.id = pkg.id;
+        li.innerText = `${pkg.id} - ${pkg.name} - ${pkg.status}`;
+        document.getElementById('package-list').appendChild(li);
+      }
     });
   </script>
 </body>
