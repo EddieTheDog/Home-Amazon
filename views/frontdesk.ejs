@@ -1,29 +1,28 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Front Desk - Create Package</title>
+  <title>Front Desk</title>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-  <h1>Front Desk - Create Package</h1>
-
-  <form action="/frontdesk" method="POST">
-    <input type="text" name="name" placeholder="Recipient Name" required>
-    <input type="text" name="address" placeholder="Delivery Address" required>
-    <input type="text" name="city" placeholder="City" required>
-    <input type="text" name="state" placeholder="State" required>
-    <input type="text" name="zip" placeholder="ZIP/Postal Code" required>
-    <input type="text" name="country" placeholder="Country" required>
-    <input type="text" name="phone" placeholder="Phone Number">
-    <input type="email" name="email" placeholder="Email">
-    <input type="text" name="weight" placeholder="Package Weight (lbs)">
-    <input type="text" name="dimensions" placeholder="Dimensions LxWxH" value="10x5x3">
+  <h1>📦 Create Package</h1>
+  <form action="/frontdesk/create" method="POST">
+    <input name="recipient" placeholder="Recipient Name" required>
+    <input name="address" placeholder="Delivery Address" required>
+    <input name="city" placeholder="City" required>
+    <input name="state" placeholder="State" required>
+    <input name="zip" placeholder="ZIP/Postal Code" required>
+    <input name="country" placeholder="Country" required>
+    <input name="phone" placeholder="Phone Number" required>
+    <input name="email" placeholder="Email" required>
+    <input name="weight" placeholder="Package Weight (lbs)" required>
+    <input name="dimensions" placeholder="Dimensions (LxWxH)" required>
     <select name="speed">
       <option value="Standard">Standard</option>
       <option value="Priority">Priority</option>
     </select>
     <textarea name="notes" placeholder="Special Instructions / Notes"></textarea>
-    <button type="submit">Create Package & Generate QR Code</button>
+    <button>Create Package & Generate QR Code</button>
   </form>
 </body>
 </html>
