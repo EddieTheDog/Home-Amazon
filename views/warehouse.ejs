@@ -1,42 +1,50 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Warehouse Dashboard</title>
+  <title>Warehouse Panel</title>
   <link rel="stylesheet" href="/style.css">
   <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
-  <h1>🏭 Warehouse Dashboard</h1>
+  <h1>🏭 Warehouse Panel</h1>
 
-  <table id="packagesTable" border="1">
-    <thead>
-      <tr>
-        <th>Package ID</th>
-        <th>Recipient</th>
-        <th>Status</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% packages.forEach(pkg => { %>
-        <tr id="pkg-<%= pkg.id %>">
-          <td><%= pkg.id %></td>
-          <td><%= pkg.recipient %></td>
-          <td><%= pkg.status %></td>
-        </tr>
-      <% }) %>
-    </tbody>
-  </table>
+  <p>Status: <span id="status">Waiting for scans...</span></p>
+
+  <button id="enableScanner">Enable Scanner</button>
+
+  <div id="scanResult"></div>
+
+  <h2>Recent Packages</h2>
+  <ul id="packageList">
+    <!-- dynamically populated -->
+  </ul>
 
   <script>
     const socket = io();
 
-    socket.on('scannedPackage', pkg => {
-      const row = document.getElementById(`pkg-${pkg.id}`);
-      if(row){
-        row.cells[2].innerText = pkg.status || 'Scanned';
-        row.style.backgroundColor = '#a0ffa0';
-        setTimeout(() => row.style.backgroundColor = '', 1000);
-      }
+    const enableScannerBtn = document.getElementById('enableScanner');
+    const scanResult = document.getElementById('scanResult');
+    const packageList = document.getElementById('packageList');
+    const statusEl = document.getElementById('status');
+
+    enableScannerBtn.addEventListener('click', () => {
+      statusEl.textContent = 'Scanner enabled. Waiting for barcode...';
+      socket.emit('enableScanner'); // you can handle this event server-side
+    });
+
+    // Listen for scanned packages from the server
+    socket.on('packageScanned', pkg => {
+      statusEl.textContent = `Last scanned: ${pkg.id}`;
+      const li = document.createElement('li');
+      li.textContent = `ID: ${pkg.id} | Address: ${pkg.address} | Status: ${pkg.status}`;
+      packageList.prepend(li);
+
+      // Flash green to indicate success
+      scanResult.textContent = `✅ Package ${pkg.id} scanned successfully`;
+      scanResult.style.color = 'green';
+      setTimeout(() => {
+        scanResult.textContent = '';
+      }, 2000);
     });
   </script>
 </body>
