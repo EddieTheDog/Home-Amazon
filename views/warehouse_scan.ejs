@@ -2,32 +2,42 @@
 <html>
 <head>
   <title>Warehouse Scanner</title>
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
 </head>
 <body>
-<h1>Warehouse Scanner</h1>
-<video id="video" width="300" height="200"></video>
-<p id="status">Waiting for scan...</p>
+  <h1>📱 Warehouse Scanner</h1>
 
-<script>
-const socket = io();
-const codeReader = new ZXing.BrowserBarcodeReader();
+  <form id="scanForm">
+    <input type="text" name="packageId" placeholder="Scan or enter Package ID" required>
+    <button type="submit">Send Scan</button>
+  </form>
 
-const videoElement = document.getElementById('video');
+  <p id="status"></p>
 
-codeReader.decodeFromVideoDevice(null, 'video', (result, err) => {
-  if (result) {
-    const id = result.text.split('/track/').pop();
-    document.getElementById('status').innerText = `Scanned: ${id}`;
-    videoElement.style.border = "5px solid green";
-    socket.emit("scan", id);
-    setTimeout(() => {
-      videoElement.style.border = "";
-      document.getElementById('status').innerText = "Waiting for scan...";
-    }, 1000);
-  }
-});
-</script>
+  <script>
+    const form = document.getElementById('scanForm');
+    const statusEl = document.getElementById('status');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const data = new FormData(form);
+      const packageId = data.get('packageId');
+
+      try {
+        const res = await fetch('/warehouse/scan', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+          body: new URLSearchParams({ packageId })
+        });
+        if(res.ok){
+          statusEl.innerText = '✅ Scan sent!';
+          form.reset();
+        } else {
+          statusEl.innerText = '❌ Package not found';
+        }
+      } catch(err){
+        statusEl.innerText = '❌ Error sending scan';
+      }
+    });
+  </script>
 </body>
 </html>
