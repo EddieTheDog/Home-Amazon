@@ -3,31 +3,24 @@
 <head>
   <title>Warehouse Panel</title>
   <link rel="stylesheet" href="/style.css">
-  <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
-  <h1>Warehouse Panel</h1>
-  <ul id="package-list">
+  <h1>🏭 Warehouse</h1>
+  <ul>
     <% packages.forEach(pkg => { %>
-      <li id="<%= pkg.id %>">
-        <strong><%= pkg.id %></strong> - <%= pkg.name %> - <%= pkg.status %>
+      <li>
+        ID: <%= pkg.id %> | Status: <%= pkg.status %> | Recipient: <%= pkg.recipient %>
+        <form action="/warehouse/update/<%= pkg.id %>" method="POST">
+          <select name="status">
+            <option value="Received">Received</option>
+            <option value="Processing">Processing</option>
+            <option value="On Truck">On Truck</option>
+            <option value="Out for Delivery">Out for Delivery</option>
+          </select>
+          <button type="submit">Update</button>
+        </form>
       </li>
     <% }) %>
   </ul>
-
-  <script>
-    const socket = io();
-    socket.on('packageScanned', pkg => {
-      const el = document.getElementById(pkg.id);
-      if (el) {
-        el.innerText = `${pkg.id} - ${pkg.name} - ${pkg.status}`;
-      } else {
-        const li = document.createElement('li');
-        li.id = pkg.id;
-        li.innerText = `${pkg.id} - ${pkg.name} - ${pkg.status}`;
-        document.getElementById('package-list').appendChild(li);
-      }
-    });
-  </script>
 </body>
 </html>
