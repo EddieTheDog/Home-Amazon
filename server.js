@@ -1,64 +1,123 @@
 import express from 'express';
-import http from 'http';
-import { Server } from 'socket.io';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import bodyParser from 'body-parser';
+import { Server } from 'socket.io';
+import http from 'http';
+import multer from 'multer';
+import fs from 'fs';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-const PORT = process.env.PORT || 3000;
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-app.use(express.static(path.join(__dirname, '../public')));
+app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, '../views'));
-app.use(bodyParser.urlencoded({ extended: true }));
 
-// Temporary in-memory store for packages
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+
+const upload = multer({ dest: 'uploads/' });
+
+// In-memory package storage (replace with DB for production)
 let packages = [];
 
-// Warehouse dashboard
+// ------------------------ ROUTES ------------------------
+
+// Front desk page
+app.get('/frontdesk', (req, res) => {
+  res.render('frontdesk');
+});
+
+// Create package
+app.post('/frontdesk', (req, res) => {
+  const pkg = {
+    id: `PKG-${Date.now()}`,
+    name: req.body.name,
+    address: req.body.address,
+    city: req.body.city,
+    state: req.body.state,
+    zip: req.body.zip,
+    country: req.body.country,
+    phone: req.body.phone,
+    email: req.body.email,
+    weight: req.body.weight,
+    dimensions: req.body.dimensions,
+    speed: req.body.speed,
+    notes: req.body.notes,
+    status: 'Processing',
+    photo: null,
+    createdAt: new Date()
+  };
+  packages.push(pkg);
+  res.render('track', { pkg });
+});
+
+// Driver panel
+app.get('/driver', (req, res) => {
+  res.render('driver', { pkg: null });
+});
+
+app.post('/driver/lookup', (req, res) => {
+  const pkg = packages.find(p => p.id === req.body.id);
+  res.render('driver', { pkg });
+});
+
+app.post('/driver/update/:id', upload.single('photo'), (req, res) => {
+  const pkg = packages.find(p => p.id === req.params.id);
+  if (!pkg) return res.send('Package not found');
+  pkg.status = req.body.status;
+  if (req.file) {
+    pkg.photo = `/uploads/${req.file.filename}`;
+  }
+  res.render('driver', { pkg });
+});
+
+// Warehouse scanner page
 app.get('/warehouse', (req, res) => {
   res.render('warehouse', { packages });
 });
 
-// Phone scanning page
-app.get('/warehouse/scan', (req, res) => {
-  res.render('warehouse-scan');
-});
-
-// Receive scanned package from phone
+// Warehouse scan endpoint
 app.post('/warehouse/scan', (req, res) => {
-  const { packageId } = req.body;
-
-  const pkg = packages.find(p => p.id === packageId);
-  if (!pkg) return res.status(404).send('Package not found');
-
-  // Update status
-  pkg.status = 'Scanned';
-
-  // Emit to all warehouse clients
-  io.emit('scannedPackage', pkg);
-  res.sendStatus(200);
+  const { barcode } = req.body;
+  const pkg = packages.find(p => p.id === barcode);
+  if (pkg) {
+    // Example: change status
+    pkg.status = 'Received at warehouse';
+    io.emit('packageScanned', pkg); // live update to front-end
+    res.json({ success: true, pkg });
+  } else {
+    res.status(404).json({ success: false });
+  }
 });
 
-// Endpoint to create packages (Front Desk)
-app.post('/package/create', (req, res) => {
-  const { id, recipient, status } = req.body;
-  packages.push({ id, recipient, status: status || 'Received' });
-  res.redirect('/warehouse');
+// URLs page
+app.get('/URLs', (req, res) => {
+  const links = [
+    { name: 'Front Desk', url: '/frontdesk' },
+    { name: 'Driver', url: '/driver' },
+    { name: 'Warehouse', url: '/warehouse' }
+  ];
+  res.render('urls', { links });
 });
 
-// Socket.io connection
+// Redirect homepage to Amazon
+app.get('/', (req, res) => {
+  res.redirect('https://amazon.com');
+});
+
+// ------------------------ SOCKET.IO ------------------------
+
 io.on('connection', socket => {
-  console.log('A client connected to warehouse dashboard');
+  console.log('Client connected');
 });
 
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+// ------------------------ SERVER ------------------------
+
+const PORT = process.env.PORT || 10000;
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
