@@ -1,38 +1,35 @@
-import express from 'express';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import bodyParser from 'body-parser';
-import multer from 'multer';
-import fs from 'fs';
-import { Server as SocketIO } from 'socket.io';
-import http from 'http';
+import express from "express";
+import bodyParser from "body-parser";
+import multer from "multer";
+import path from "path";
+import { fileURLToPath } from "url";
+import fs from "fs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const server = http.createServer(app);
-const io = new SocketIO(server);
+const PORT = 10000;
 
-const upload = multer({ dest: 'uploads/' });
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "views"));
 
-// In-memory storage (replace with DB for production)
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, "public")));
+
+const upload = multer({ dest: path.join(__dirname, "uploads/") });
+
+// Simple in-memory storage (replace with a database for production)
 let packages = [];
 
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
-app.use(express.static(path.join(__dirname, 'public')));
-app.use(bodyParser.urlencoded({ extended: true }));
+// ---------------------- FRONT DESK ---------------------- //
+app.get("/frontdesk", (req, res) => {
+  res.render("frontdesk");
+});
 
-// Redirect home to amazon
-app.get('/', (req, res) => res.redirect('https://amazon.com'));
-
-// Front Desk
-app.get('/frontdesk', (req, res) => res.render('frontdesk'));
-app.post('/frontdesk/create', (req, res) => {
-  const id = Date.now().toString();
+app.post("/frontdesk/create", (req, res) => {
   const pkg = {
-    id,
+    id: packages.length + 1,
     recipient: req.body.recipient,
     address: req.body.address,
     city: req.body.city,
@@ -45,52 +42,58 @@ app.post('/frontdesk/create', (req, res) => {
     dimensions: req.body.dimensions,
     speed: req.body.speed,
     notes: req.body.notes,
-    status: 'Created',
-    photo: null
+    status: "Created",
+    photo: null,
   };
   packages.push(pkg);
-  res.render('track', { pkg });
+  res.render("track", { pkg });
 });
 
-// Driver
-app.get('/driver', (req, res) => res.render('driver', { pkg: null }));
-app.post('/driver/lookup', (req, res) => {
-  const pkg = packages.find(p => p.id === req.body.id);
-  res.render('driver', { pkg });
+// ---------------------- DRIVER ---------------------- //
+app.get("/driver", (req, res) => {
+  res.render("driver", { pkg: null });
 });
-app.post('/driver/update/:id', upload.single('photo'), (req, res) => {
-  const pkg = packages.find(p => p.id === req.params.id);
+
+app.post("/driver/lookup", (req, res) => {
+  const pkg = packages.find((p) => p.id == req.body.id);
+  res.render("driver", { pkg: pkg || null });
+});
+
+app.post("/driver/update/:id", upload.single("photo"), (req, res) => {
+  const pkg = packages.find((p) => p.id == req.params.id);
   if (pkg) {
     pkg.status = req.body.status;
-    if (req.file) pkg.photo = `/uploads/${req.file.filename}`;
+    if (req.file) {
+      pkg.photo = "/uploads/" + req.file.filename;
+    }
   }
-  res.render('driver', { pkg });
+  res.render("driver", { pkg });
 });
 
-// Warehouse
-app.get('/warehouse', (req, res) => res.render('warehouse', { packages }));
-app.get('/warehouse/scan', (req, res) => res.render('warehouse-scan', { packages }));
-app.post('/warehouse/update/:id', (req, res) => {
-  const pkg = packages.find(p => p.id === req.params.id);
-  if (pkg) pkg.status = req.body.status;
-  io.emit('update', pkg);
-  res.sendStatus(200);
+// ---------------------- TRACK ---------------------- //
+app.get("/track/:id", (req, res) => {
+  const pkg = packages.find((p) => p.id == req.params.id);
+  res.render("track", { pkg });
 });
 
-// URLs
-app.get('/urls', (req, res) => {
-  const links = [
-    { name: 'Front Desk', url: '/frontdesk' },
-    { name: 'Driver', url: '/driver' },
-    { name: 'Warehouse', url: '/warehouse' }
-  ];
-  res.render('urls', { links });
+// ---------------------- WAREHOUSE ---------------------- //
+app.get("/warehouse", (req, res) => {
+  res.render("warehouse", { packages });
 });
 
-// Socket.io connection
-io.on('connection', socket => {
-  console.log('Client connected');
+app.get("/warehouse/scan", (req, res) => {
+  res.render("scan");
 });
 
-const PORT = process.env.PORT || 10000;
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.post("/warehouse/update", (req, res) => {
+  const pkg = packages.find((p) => p.id == req.body.id);
+  if (pkg) {
+    pkg.status = req.body.status;
+  }
+  res.json({ success: !!pkg });
+});
+
+// ---------------------- START SERVER ---------------------- //
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
